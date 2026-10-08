@@ -1,0 +1,9 @@
+.private/
+.env
+.env.*
+credentials.json
+session.txt
+auth-retry.json
+site/usage.json
+__pycache__/
+*.pyc

@@ -1,0 +1,55 @@
+name: Publish balance panel
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17,47 * * * *'
+
+concurrency:
+  group: team-balance-pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    if: github.event_name == 'workflow_dispatch' || vars.QUOTA_SCHEDULE_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Build quota snapshot
+        id: sync
+        env:
+          GALAXY_PHONE: ${{ secrets.GALAXY_PHONE }}
+          GALAXY_PASSWORD_MD5: ${{ secrets.GALAXY_PASSWORD_MD5 }}
+        run: python sync.py
+      - name: Pause workflow when login needs attention
+        if: failure() && steps.sync.outputs.auth_blocked == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          curl --fail --silent --show-error -X PUT \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            "https://api.github.com/repos/${{ github.repository }}/actions/workflows/publish.yml/disable"
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.publish.outputs.page_url }}
+    steps:
+      - name: Deploy Pages
+        id: publish
+        uses: actions/deploy-pages@v5
