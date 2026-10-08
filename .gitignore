@@ -7,3 +7,5 @@ auth-retry.json
 site/usage.json
 __pycache__/
 *.pyc
+scheduler/node_modules/
+scheduler/.wrangler/

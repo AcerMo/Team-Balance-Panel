@@ -2,8 +2,6 @@ name: Publish balance panel
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: '17,47 * * * *'
 
 concurrency:
   group: team-balance-pages
@@ -11,7 +9,6 @@ concurrency:
 
 jobs:
   build:
-    if: github.event_name == 'workflow_dispatch' || vars.QUOTA_SCHEDULE_ENABLED == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read

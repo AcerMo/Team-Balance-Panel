@@ -1,0 +1,7 @@
+name = "team-balance-scheduler"
+main = "worker.mjs"
+compatibility_date = "2026-10-08"
+workers_dev = false
+
+[triggers]
+crons = ["*/10 * * * *"]

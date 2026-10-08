@@ -16,7 +16,7 @@ from pathlib import Path
 ORIGIN = 'https://gpu.ai-galaxy.com'
 READ_PATHS = {'/api/deepai/get_app_configs', '/api/deepai/get_key_list'}
 MAX_RESPONSE = 8 * 1024 * 1024
-SYNC_INTERVAL_SECONDS = 1800
+SYNC_INTERVAL_SECONDS = 600
 SITE = Path(__file__).resolve().parent / 'site'
 
 

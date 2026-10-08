@@ -41,7 +41,7 @@ class SnapshotTests(unittest.TestCase):
         data = sync.fetch_snapshot('PRIVATE-SESSION', source([item()]))
         self.assertEqual(data['rows'], [{'name': '测试成员', 'remaining': '199.92',
             'used': '0.08', 'total': '200.00', 'unlimited': False, 'status': '启用'}])
-        self.assertEqual(data['sync_interval_seconds'], 1800)
+        self.assertEqual(data['sync_interval_seconds'], 600)
         output = json.dumps(data)
         for secret in ['sk-DO-NOT-PUBLISH', 'PRIVATE-SESSION', 'ChatMoney', DIGEST]:
             self.assertNotIn(secret, output)
