@@ -3,7 +3,7 @@ name: Publish balance panel
 on:
   workflow_dispatch:
   schedule:
-    - cron: '17,47 * * * *'
+    - cron: '*/5 * * * *'
 
 concurrency:
   group: team-balance-pages
