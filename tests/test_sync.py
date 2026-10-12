@@ -82,15 +82,16 @@ class SnapshotTests(unittest.TestCase):
                             publish.assert_not_called()
             self.assertEqual(json.loads(path.read_text()), previous)
 
-    def test_verification_pauses_workflow_without_leaking_reason(self):
-        with tempfile.TemporaryDirectory() as directory:
-            output = Path(directory) / 'job-output.txt'
-            output.touch()
-            with patch.dict(os.environ, {'GALAXY_PHONE': PHONE,
-                         'GALAXY_PASSWORD_MD5': DIGEST, 'GITHUB_OUTPUT': str(output)}):
-                with patch.object(sync, 'login', side_effect=sync.SyncError('verification_required')):
-                    self.assertEqual(sync.main(), 1)
-            self.assertEqual(output.read_text(), 'auth_blocked=true\n')
+    def test_auth_errors_report_pause_reason(self):
+        for code in ('verification_required', 'login_rejected'):
+            with self.subTest(code=code), tempfile.TemporaryDirectory() as directory:
+                output = Path(directory) / 'job-output.txt'
+                output.touch()
+                with patch.dict(os.environ, {'GALAXY_PHONE': PHONE,
+                             'GALAXY_PASSWORD_MD5': DIGEST, 'GITHUB_OUTPUT': str(output)}):
+                    with patch.object(sync, 'login', side_effect=sync.SyncError(code)):
+                        self.assertEqual(sync.main(), 1)
+                self.assertEqual(output.read_text(), f'auth_blocked={code}\n')
 
     def test_static_assets_work_under_repository_subpath(self):
         html = (sync.SITE / 'index.html').read_text()

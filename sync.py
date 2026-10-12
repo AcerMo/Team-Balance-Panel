@@ -185,7 +185,7 @@ def main():
             output = os.environ.get('GITHUB_OUTPUT')
             if output:
                 with open(output, 'a', encoding='utf-8') as stream:
-                    stream.write('auth_blocked=true\n')
+                    stream.write(f'auth_blocked={error.code}\n')
         print('Sync failed: ' + error.code, file=sys.stderr)
         return 1
     except Exception:

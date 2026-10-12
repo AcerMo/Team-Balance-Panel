@@ -25,10 +25,19 @@ jobs:
           GALAXY_PASSWORD_MD5: ${{ secrets.GALAXY_PASSWORD_MD5 }}
         run: python sync.py
       - name: Pause workflow when login needs attention
-        if: failure() && steps.sync.outputs.auth_blocked == 'true'
+        if: failure() && steps.sync.outputs.auth_blocked != ''
         env:
           GH_TOKEN: ${{ github.token }}
+          AUTH_ERROR: ${{ steps.sync.outputs.auth_blocked }}
         run: |
+          if [ "$AUTH_ERROR" = login_rejected ]; then
+            previous=$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/publish.yml/runs?per_page=5" \
+              --jq '[.workflow_runs[] | select(.status == "completed")][0].conclusion')
+            if [ "$previous" != failure ]; then
+              echo "First login rejection; retrying at the next scheduled run."
+              exit 0
+            fi
+          fi
           curl --fail --silent --show-error -X PUT \
             -H "Accept: application/vnd.github+json" \
             -H "Authorization: Bearer $GH_TOKEN" \
