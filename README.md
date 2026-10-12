@@ -1,6 +1,6 @@
 # 团队余额看板
 
-公开页面展示智星云主账号下各 API Key 的名称、人民币剩余额度、总额度、已用金额和状态。Cloudflare Worker 每 10 分钟触发一次 GitHub Actions；Actions 生成 `usage.json` 并部署到 GitHub Pages。GitHub Pages 只托管静态文件，无需常驻服务器。
+公开页面展示智星云主账号下各 API Key 的名称、人民币剩余额度、总额度、已用金额和状态。Cloudflare Worker 每 15 分钟触发一次 GitHub Actions；Actions 生成 `usage.json` 并部署到 GitHub Pages。GitHub Pages 只托管静态文件，无需常驻服务器。
 
 ## 首次部署
 
@@ -16,7 +16,7 @@
 
 3. 在仓库 **Actions → Publish balance panel → Run workflow** 手动运行一次。确认两个作业 `build`、`deploy` 成功，打开 Pages 链接，核对成员数量、金额及更新时间。GitHub 托管的运行环境必须能够正常登录智星云；如出现验证码，需要先人工处理。
 4. 创建只授权 `AcerMo/Team-Balance-Panel`、具有 **Actions: Read and write** 权限的 GitHub 细粒度个人访问令牌。在 Cloudflare Workers Free 账号中部署 `scheduler/`，将令牌存为 Worker 的加密密钥 `GITHUB_ACTIONS_TOKEN`。不要把令牌填入 Worker 的普通变量或提交到仓库。
-5. `scheduler/wrangler.toml` 使用 UTC 的 `*/10 * * * *`，即北京时间每小时的 00、10、20、30、40、50 分触发。Cloudflare 的首次 Cron 配置可能需要最多 15 分钟生效。GitHub 工作流只接受 `workflow_dispatch`，以避免重复登录。
+5. `scheduler/wrangler.toml` 使用 UTC 的 `*/15 * * * *`，即北京时间每小时的 00、15、30、45 分触发。Cloudflare 的 Cron 配置变更可能需要最多 15 分钟生效。GitHub 工作流只接受 `workflow_dispatch`，以避免重复登录。
 
 拥有 Cloudflare Workers 编辑权限的账号可在任意电脑维护定时器：首次使用 Cloudflare Workers 时，先打开 Workers & Pages 页面初始化账号的 `workers.dev` 子域；然后在 `scheduler/` 目录运行 `npx wrangler@4.148.0 deploy` 部署代码，再运行 `npx wrangler@4.148.0 secret put GITHUB_ACTIONS_TOKEN`，按无回显提示输入上述 GitHub 令牌。令牌过期时只需重新设置该密钥；不需要重建网页或智星云 Secrets。不要为此升级到 Workers Paid。
 
@@ -24,7 +24,7 @@
 
 一次同步失败时不会部署新页面。GitHub Pages 保留上一次成功发布的余额，网页会提示数据更新延迟。工作流只记录错误类别，不记录手机号、密码摘要、会话、完整 API Key 或接口响应。
 
-如果网站要求验证码，工作流会立即暂停。普通登录拒绝会在下一次 10 分钟触发时重试一次；连续两次任务失败后才暂停，以免一次临时拒绝造成长期停更，也避免反复尝试无效密码。处理问题并更新 Secrets 后，在 **Actions** 页面重新启用工作流，先手动运行确认成功。GitHub Actions 的失败通知可用于发现问题。
+如果网站要求验证码，工作流会立即暂停。普通登录拒绝会在下一次 15 分钟触发时重试一次；连续两次任务失败后才暂停，以免一次临时拒绝造成长期停更，也避免反复尝试无效密码。处理问题并更新 Secrets 后，在 **Actions** 页面重新启用工作流，先手动运行确认成功。GitHub Actions 的失败通知可用于发现问题。
 
 Cloudflare 触发器只发送工作流启动请求，不读取智星云凭据或公开数据。若 Worker 密钥失效，更新 `GITHUB_ACTIONS_TOKEN` 并检查 Cloudflare 的 Cron 运行记录。仓库若改为私有，Pages 和 Actions 的可用范围与额度取决于 GitHub 套餐。
 
