@@ -2,6 +2,11 @@ name: Publish balance panel
 
 on:
   workflow_dispatch:
+    inputs:
+      force:
+        description: Run outside the hourly schedule
+        type: boolean
+        default: false
 
 concurrency:
   group: team-balance-pages
@@ -13,13 +18,29 @@ jobs:
     permissions:
       contents: read
       actions: write
+    outputs:
+      should_publish: ${{ steps.gate.outputs.should_publish }}
     steps:
+      - name: Check hourly slot
+        id: gate
+        env:
+          FORCE: ${{ inputs.force }}
+        run: |
+          minute=$(date -u +%M)
+          if [ "$FORCE" = true ] || [ "$minute" -lt 10 ]; then
+            echo "should_publish=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "should_publish=false" >> "$GITHUB_OUTPUT"
+          fi
       - uses: actions/checkout@v7
+        if: steps.gate.outputs.should_publish == 'true'
       - uses: actions/setup-python@v7
+        if: steps.gate.outputs.should_publish == 'true'
         with:
           python-version: '3.12'
       - name: Build quota snapshot
         id: sync
+        if: steps.gate.outputs.should_publish == 'true'
         env:
           GALAXY_PHONE: ${{ secrets.GALAXY_PHONE }}
           GALAXY_PASSWORD_MD5: ${{ secrets.GALAXY_PASSWORD_MD5 }}
@@ -43,11 +64,13 @@ jobs:
             -H "Authorization: Bearer $GH_TOKEN" \
             "https://api.github.com/repos/${{ github.repository }}/actions/workflows/publish.yml/disable"
       - uses: actions/upload-pages-artifact@v5
+        if: steps.gate.outputs.should_publish == 'true'
         with:
           path: site
 
   deploy:
     needs: build
+    if: needs.build.outputs.should_publish == 'true'
     runs-on: ubuntu-latest
     permissions:
       pages: write
